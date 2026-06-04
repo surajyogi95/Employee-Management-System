@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMS Admin – Employee Management System</title>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f0f4f8',
+              100: '#dbe3f0',
+              200: '#bcd0e4',
+              300: '#90b2d4',
+              400: '#5e8ec0',
+              500: '#3e6fa5',
+              600: '#2f5687',
+              700: '#26456d',
+              800: '#1d3353',
+              900: '#111d33',
+              950: '#0a0e2c',
+            },
+            accent: {
+              cyan: '#00d1ff',
+              hover: '#00b0d9',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Outfit', sans-serif; }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+    }
+    .dark .glass-panel {
+      background: rgba(10, 14, 44, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .nav-active-glow {
+      position: relative;
+      background-color: rgba(0, 209, 255, 0.1);
+      color: #00d1ff !important;
+    }
+    .nav-active-glow::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 15%;
+      height: 70%;
+      width: 3px;
+      background-color: #00d1ff;
+      border-radius: 0 4px 4px 0;
+      box-shadow: 0 0 8px #00d1ff;
+    }
+    #toast {
+      visibility: hidden;
+      min-width: 280px;
+      margin-left: -140px;
+      text-align: center;
+      border-radius: 16px;
+      padding: 16px;
+      position: fixed;
+      z-index: 100;
+      left: 50%;
+      bottom: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      transition: visibility 0s, opacity 0.3s linear;
+      opacity: 0;
+    }
+    #toast.show {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-primary-950 dark:text-gray-100 min-h-screen transition-colors duration-300 font-sans antialiased">
+
+  <!-- TOAST ALERTS -->
+  <div id="toast" class="bg-gradient-to-r from-accent-cyan to-blue-600 text-primary-950">Success Message</div>
+
+  <!-- AUTH ROOT PANEL -->
+  <div id="auth-root" class="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
+    <div class="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-accent-cyan/20 blur-[80px] pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-blue-600/10 blur-[100px] pointer-events-none"></div>
+
+    <div class="w-full max-w-md z-10">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-accent-cyan to-blue-500 bg-clip-text text-transparent font-display">
+          EMPLOYEE HUB
+        </h2>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Interactive Live Preview (LocalStorage Persistent)
+        </p>
+      </div>
+
+      <div class="glass-panel p-8 rounded-3xl border border-white/20 dark:border-white/10 shadow-glass-light dark:shadow-glass-dark">
+        <div id="login-error" class="hidden p-3 mb-6 text-sm text-red-650 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-xl border border-red-200 dark:border-red-900/30 flex items-center gap-2">
+          Invalid username or password.
+        </div>
+
+        <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+              Admin Email
+            </label>
+            <input
+              type="email"
+              id="login-email"
+              required
+              placeholder="admin@ems.com"
+              value="admin@ems.com"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan transition text-sm"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+              Password
+            </label>
+            <input
+              type="password"
+              id="login-password"
+              required
+              placeholder="••••••••"
+              value="admin123"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan transition text-sm"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-3.5 px-4 bg-gradient-to-r from-accent-cyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-primary-950 font-bold rounded-xl shadow-lg hover:shadow-cyan-500/20 active:scale-[0.98] transition mt-4 text-sm"
+          >
+            Secure Log In
+          </button>
+        </form>
+      </div>
+
+
+    </div>
+  </div>
+
+  <!-- MAIN APP PANEL (HIDDEN BY DEFAULT) -->
+  <div id="app-root" class="hidden flex min-h-screen bg-gray-50 dark:bg-[#0a0e2c] text-gray-800 dark:text-gray-150 transition-colors duration-250">
+    
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-white border-r border-gray-200 dark:bg-primary-950 dark:border-white/10 w-64">
+      <div class="flex flex-col h-full justify-between">
+        <div>
+          <div class="flex items-center justify-between p-4 h-16 border-b border-gray-100 dark:border-white/10">
+            <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-accent-cyan to-blue-500 bg-clip-text text-transparent font-display">
+              EMS PANEL
+            </span>
+          </div>
+
+          <nav class="p-3 space-y-1.5">
+            <button onclick="navigateRoute('dashboard')" id="nav-dashboard" class="flex items-center gap-3 w-full px-3 py-3.5 rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white nav-active-glow">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+              <span class="text-sm font-medium tracking-wide">Dashboard</span>
+            </button>
+            <button onclick="navigateRoute('employees')" id="nav-employees" class="flex items-center gap-3 w-full px-3 py-3.5 rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              <span class="text-sm font-medium tracking-wide">Employees</span>
+            </button>
+            <button onclick="navigateRoute('reports')" id="nav-reports" class="flex items-center gap-3 w-full px-3 py-3.5 rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
+              <span class="text-sm font-medium tracking-wide">Reports</span>
+            </button>
+            <button onclick="navigateRoute('settings')" id="nav-settings" class="flex items-center gap-3 w-full px-3 py-3.5 rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              <span class="text-sm font-medium tracking-wide">Settings</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="p-3 border-t border-gray-100 dark:border-white/10 bg-gray-50/30 dark:bg-white/2">
+          <div class="flex items-center gap-3 p-2 mb-3">
+            <div id="admin-avatar" class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-accent-cyan to-blue-600 text-white font-semibold font-display">A</div>
+            <div>
+              <p id="admin-display-name" class="text-sm font-semibold truncate dark:text-white">Admin User</p>
+              <p class="text-xs text-gray-400 truncate">admin@ems.com</p>
+            </div>
+          </div>
+          <button onclick="handleLogout()" class="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <span class="text-sm font-medium tracking-wide">Logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENT WRAPPER -->
+    <div id="main-content" class="flex-1 flex flex-col min-w-0 transition-all duration-300 pl-64">
+      
+      <!-- STICKY HEADER -->
+      <header class="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white/70 dark:bg-primary-950/70 border-b border-gray-100 dark:border-white/5 backdrop-blur-md">
+        <h1 id="page-title" class="text-xl font-bold tracking-tight text-gray-800 dark:text-white font-display">
+          Dashboard Overview
+        </h1>
+        <div class="flex items-center gap-4">
+          <button onclick="toggleDarkMode()" class="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 transition">
+            <svg id="theme-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+            </svg>
+          </button>
+          <div class="h-6 w-px bg-gray-200 dark:bg-white/10"></div>
+          <div class="flex items-center gap-2 p-1.5 rounded-xl bg-gray-50 dark:bg-white/5">
+            <div id="admin-mini-avatar" class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-accent-cyan to-blue-600 text-white font-semibold text-sm">A</div>
+            <span id="admin-mini-name" class="text-sm font-medium text-gray-700 dark:text-gray-200 pr-2">Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ROUTES CONTAINER -->
+      <main id="routes-container" class="flex-1 overflow-y-auto">
+        
+        <!-- DASHBOARD PAGE -->
+        <div id="route-dashboard" class="route-page p-6 space-y-8 animate-fade-in">
+          <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Cards -->
+            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
+              <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Employees</p>
+                <p id="stat-total" class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white font-display">10</p>
+                <p class="text-[10px] text-gray-400">Database headcount</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-accent-cyan"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg></div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
+              <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Active Employees</p>
+                <p id="stat-active" class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white font-display">10</p>
+                <p id="stat-active-subtitle" class="text-[10px] text-emerald-500">100% active operational</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-450"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg></div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
+              <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Departments</p>
+                <p id="stat-depts" class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white font-display">5</p>
+                <p class="text-[10px] text-gray-400">Cost centers active</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-500"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg></div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
+              <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">New This Month</p>
+                <p id="stat-new" class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white font-display">0</p>
+                <p class="text-[10px] text-accent-cyan">Hires since month start</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+            </div>
+          </section>
+
+          <!-- SVG Charts Section -->
+          <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Line Graph -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+              <div class="mb-4">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white font-display">Employee Growth Trend</h3>
+                <p class="text-xs text-gray-400">Seeded employee onboarding timeline</p>
+              </div>
+              <div class="relative w-full h-48">
+                <svg viewBox="0 0 500 180" class="w-full h-full">
+                  <defs>
+                    <linearGradient id="g-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#00d1ff" stop-opacity="0.3" />
+                      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M 40 130 Q 150 90 260 70 T 470 30 L 470 150 L 40 150 Z" fill="url(#g-grad)" />
+                  <path d="M 40 130 Q 150 90 260 70 T 470 30" fill="none" stroke="#00d1ff" stroke-width="3" stroke-linecap="round" />
+                  <circle cx="40" cy="130" r="4" fill="#00d1ff" stroke="#0a0e2c" stroke-width="2" />
+                  <circle cx="260" cy="70" r="4" fill="#00d1ff" stroke="#0a0e2c" stroke-width="2" />
+                  <circle cx="470" cy="30" r="4" fill="#00d1ff" stroke="#0a0e2c" stroke-width="2" />
+                  <text x="40" y="170" fill="#999" font-size="9" text-anchor="middle">Jan</text>
+                  <text x="260" y="170" fill="#999" font-size="9" text-anchor="middle">Jun</text>
+                  <text x="470" y="170" fill="#999" font-size="9" text-anchor="middle">Dec</text>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Doughnut Chart -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+              <div class="mb-4">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white font-display">Department Distribution</h3>
+                <p class="text-xs text-gray-400">Headcount distribution</p>
+              </div>
+              <div class="flex items-center justify-around h-48">
+                <div class="relative w-36 h-36">
+                  <svg viewBox="0 0 200 200" class="w-full h-full transform -rotate-90" id="doughnut-svg">
+                    <!-- Dynamic rendering via JS -->
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-xl font-bold dark:text-white font-display" id="chart-headcount">10</span>
+                    <span class="text-[9px] text-gray-450 uppercase font-semibold">Staff</span>
+                  </div>
+                </div>
+                <div id="chart-legends" class="space-y-1.5 text-xs">
+                  <!-- Legends render via JS -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Hires and Quick Actions -->
+          <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="glass-panel p-6 rounded-2xl lg:col-span-2 space-y-4">
+              <h3 class="text-base font-bold text-gray-800 dark:text-white font-display">Recent Hires</h3>
+              <div id="recent-hires-list" class="divide-y divide-gray-150 dark:divide-white/5">
+                <!-- JS builds list -->
+              </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+              <h3 class="text-base font-bold text-gray-800 dark:text-white font-display">Quick Actions</h3>
+              <div class="flex flex-col gap-3">
+                <button onclick="openAddEmployeeModal()" class="w-full py-3 px-4 bg-gradient-to-r from-accent-cyan to-blue-600 text-white font-bold rounded-xl text-xs shadow-lg active:scale-98 transition flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Add New Employee
+                </button>
+                <button onclick="navigateRoute('employees')" class="w-full py-3 px-4 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-xl text-xs hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center justify-center gap-2">
+                  View Roster Table
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- EMPLOYEES ROSTER PAGE -->
+        <div id="route-employees" class="route-page p-6 space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-lg font-bold text-gray-800 dark:text-white font-display">Employee Directory</h2>
+              <p class="text-xs text-gray-400">Full control CRUD roster listing</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="exportCSV()" class="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 rounded-xl text-xs font-semibold transition">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Export Excel
+              </button>
+              <button onclick="printPDF()" class="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 rounded-xl text-xs font-semibold transition">
+                <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                Print PDF
+              </button>
+              <button onclick="openAddEmployeeModal()" class="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-accent-cyan to-blue-600 text-white font-bold rounded-xl text-xs shadow-lg transition">
+                Add Employee
+              </button>
+            </div>
+          </div>
+
+          <!-- Roster Search & Filter -->
+          <div class="glass-panel p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+            <div class="relative sm:col-span-2">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </span>
+              <input
+                type="text"
+                id="roster-search"
+                placeholder="Search by ID, name, email, designation or department..."
+                oninput="renderRosterTable()"
+                class="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan transition text-sm"
+              />
+            </div>
+            <select
+              id="roster-dept-filter"
+              onchange="renderRosterTable()"
+              class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-primary-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan transition text-sm"
+            >
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <!-- Roster Table grid -->
+          <div class="glass-panel rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr class="border-b border-gray-150 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 text-gray-500 dark:text-gray-400">
+                    <th class="px-5 py-3 font-semibold cursor-pointer" onclick="changeSort('employee_id')">ID</th>
+                    <th class="px-5 py-3 font-semibold cursor-pointer" onclick="changeSort('full_name')">Full Name</th>
+                    <th class="px-5 py-3 font-semibold cursor-pointer" onclick="changeSort('department')">Department</th>
+                    <th class="px-5 py-3 font-semibold">Designation</th>
+                    <th class="px-5 py-3 font-semibold cursor-pointer" onclick="changeSort('salary')">Salary</th>
+                    <th class="px-5 py-3 font-semibold cursor-pointer" onclick="changeSort('status')">Status</th>
+                    <th class="px-5 py-3 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="roster-tbody" class="divide-y divide-gray-100 dark:divide-white/5">
+                  <!-- JS generated rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- REPORTS PAGE -->
+        <div id="route-reports" class="route-page p-6 space-y-6 hidden">
+          <div>
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white font-display">Budget & Cost Reports</h2>
+            <p class="text-xs text-gray-400">Payroll distributions by operational departments</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
+              <div>
+                <p class="text-xs text-gray-400 uppercase font-semibold">Annual Payroll Budget</p>
+                <p id="report-total-budget" class="text-2xl font-bold dark:text-white font-mono mt-1">$0</p>
+              </div>
+              <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M12 16v1" /></svg></div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
+              <div>
+                <p class="text-xs text-gray-400 uppercase font-semibold">Average Salary Budget</p>
+                <p id="report-avg-salary" class="text-2xl font-bold dark:text-white font-mono mt-1">$0</p>
+              </div>
+              <div class="p-3 bg-blue-500/10 text-blue-600 rounded-xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg></div>
+            </div>
+          </div>
+
+          <!-- Allocation comparison -->
+          <div class="glass-panel p-6 rounded-2xl space-y-4">
+            <h3 class="text-base font-bold text-gray-800 dark:text-white">Cost Allocation budgets</h3>
+            <div id="reports-bars-container" class="space-y-4 pt-2">
+              <!-- JS renders budgeting rows -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS PAGE -->
+        <div id="route-settings" class="route-page p-6 max-w-2xl mx-auto space-y-6 hidden">
+          <div>
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white font-display">System Settings</h2>
+            <p class="text-xs text-gray-400">Configure admin credentials and profile keys</p>
+          </div>
+
+          <div class="glass-panel p-6 rounded-3xl space-y-5">
+            <h3 class="text-sm font-bold text-gray-800 dark:text-white">Change Admin Password</h3>
+            <form onsubmit="changePassword(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Current Password</label>
+                <input type="password" id="settings-current-pass" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">New Password</label>
+                <input type="password" id="settings-new-pass" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan text-sm" />
+              </div>
+              <button type="submit" class="w-full py-3 bg-gradient-to-r from-accent-cyan to-blue-600 text-white font-bold rounded-xl text-xs transition">
+                Update Password
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT DIALOG FORM -->
+  <div id="employee-modal" class="fixed inset-0 z-50 flex items-center justify-end overflow-hidden hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeEmployeeModal()"></div>
+    <div class="relative w-full max-w-lg h-full bg-white dark:bg-primary-900 border-l border-gray-100 dark:border-white/5 shadow-2xl flex flex-col justify-between">
+      <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/5">
+        <h3 id="modal-heading" class="text-lg font-bold text-gray-800 dark:text-white">Register New Employee</h3>
+        <button onclick="closeEmployeeModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-white">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <!-- Scrollable Form body -->
+      <form id="employee-form" onsubmit="handleEmployeeFormSubmit(event)" class="flex-1 overflow-y-auto p-6 space-y-4">
+        <input type="hidden" id="form-emp-db-id" />
+        
+        <!-- Error Alert -->
+        <div id="form-validation-error" class="hidden p-3 text-xs text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900/30 rounded-xl">
+          Validation errors.
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Employee ID</label>
+          <input type="text" id="form-emp-id" placeholder="EMP001" oninput="this.value = this.value.toUpperCase()" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-1 focus:ring-accent-cyan" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Full Name</label>
+          <input type="text" id="form-name" placeholder="John Doe" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-1 focus:ring-accent-cyan" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Email Address</label>
+          <input type="email" id="form-email" placeholder="john.doe@company.com" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm focus:outline-none focus:ring-1 focus:ring-accent-cyan" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Department</label>
+            <input type="text" id="form-dept" placeholder="Engineering" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Designation</label>
+            <input type="text" id="form-designation" placeholder="Staff" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm focus:outline-none" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Salary (Annual $)</label>
+            <input type="number" id="form-salary" placeholder="75000" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Gender</label>
+            <select id="form-gender" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-primary-900 text-gray-800 dark:text-white text-sm focus:outline-none">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">DOB</label>
+            <input type="date" id="form-dob" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Joining Date</label>
+            <input type="date" id="form-joining" required class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-800 dark:text-white text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Status</label>
+            <select id="form-status" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-primary-900 text-gray-800 dark:text-white text-sm focus:outline-none">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </form>
+
+      <div class="p-5 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 bg-gray-50/50 dark:bg-white/2">
+        <button onclick="closeEmployeeModal()" class="px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-700 dark:text-gray-300 text-xs font-bold transition">Cancel</button>
+        <button type="submit" form="employee-form" class="px-5 py-2.5 bg-gradient-to-r from-accent-cyan to-blue-600 text-white font-bold rounded-xl text-xs transition">Save Record</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION DIALOG MODAL -->
+  <div id="delete-confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteConfirmModal()"></div>
+    <div class="relative w-full max-w-md bg-white dark:bg-primary-900 border border-gray-100 dark:border-white/5 rounded-3xl p-6 shadow-2xl animate-fade-in z-10">
+      <h3 class="text-lg font-bold text-gray-850 dark:text-white mb-2 font-display">Confirm Employee Deletion</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
+        Are you sure you want to remove <span class="font-semibold dark:text-white" id="delete-emp-name">employee</span>? Choose how to perform this operation:
+      </p>
+      <div class="flex flex-col gap-2.5">
+        <button onclick="executeDelete('soft')" class="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-655 text-white font-semibold rounded-xl text-sm transition">
+          Soft Delete (Keep row in database, hide from roster)
+        </button>
+        <button onclick="executeDelete('permanent')" class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl text-sm transition">
+          Permanent Delete (Erase completely from database)
+        </button>
+        <button onclick="closeDeleteConfirmModal()" class="w-full py-2.5 px-4 border border-gray-200 dark:border-white/10 text-gray-750 dark:text-gray-300 hover:bg-gray-55 dark:hover:bg-white/5 font-semibold rounded-xl text-sm transition mt-1">
+          Keep Profile (Cancel)
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- INTERACTIVE LOGICS JS -->
+  <script>
+    // Initialize LocalStorage Data
+    const defaultEmployees = [
+      { id: 1, employee_id: 'EMP001', full_name: 'Alice Johnson', email: 'alice.j@company.com', gender: 'Female', dob: '1992-05-15', department: 'Engineering', designation: 'Senior Backend Engineer', salary: 95000, joining_date: '2024-01-10', status: 'Active' },
+      { id: 2, employee_id: 'EMP002', full_name: 'Bob Smith', email: 'bob.smith@company.com', gender: 'Male', dob: '1988-09-21', department: 'Marketing', designation: 'Content Strategy Lead', salary: 68000, joining_date: '2024-03-01', status: 'Active' },
+      { id: 3, employee_id: 'EMP003', full_name: 'Catherine Chen', email: 'catherine.c@company.com', gender: 'Female', dob: '1995-11-04', department: 'Engineering', designation: 'Frontend Developer', salary: 75000, joining_date: '2024-06-15', status: 'Active' },
+      { id: 4, employee_id: 'EMP004', full_name: 'David Miller', email: 'david.miller@company.com', gender: 'Male', dob: '1985-02-12', department: 'Human Resources', designation: 'HR Director', salary: 82000, joining_date: '2023-08-20', status: 'Active' },
+      { id: 5, employee_id: 'EMP005', full_name: 'Emily Davis', email: 'emily.davis@company.com', gender: 'Female', dob: '1993-07-28', department: 'Sales', designation: 'Account Executive', salary: 62000, joining_date: '2024-09-01', status: 'Active' },
+      { id: 6, employee_id: 'EMP006', full_name: 'Frank Miller', email: 'frank.miller@company.com', gender: 'Male', dob: '1990-12-10', department: 'Finance', designation: 'Financial Analyst', salary: 72000, joining_date: '2024-11-10', status: 'Active' },
+      { id: 7, employee_id: 'EMP007', full_name: 'Grace Hopper', email: 'grace.h@company.com', gender: 'Female', dob: '1980-12-09', department: 'Engineering', designation: 'Principal Architect', salary: 135000, joining_date: '2023-01-15', status: 'Active' },
+      { id: 8, employee_id: 'EMP008', full_name: 'Henry Taylor', email: 'henry.t@company.com', gender: 'Male', dob: '1996-03-30', department: 'Sales', designation: 'Sales Representative', salary: 48000, joining_date: '2025-02-01', status: 'Active' },
+      { id: 9, employee_id: 'EMP009', full_name: 'Ivy Zhang', email: 'ivy.z@company.com', gender: 'Female', dob: '1994-08-18', department: 'Design', designation: 'Lead UI/UX Designer', salary: 80000, joining_date: '2024-04-10', status: 'Active' },
+      { id: 10, employee_id: 'EMP010', full_name: 'Jack Wilson', email: 'jack.w@company.com', gender: 'Male', dob: '1987-04-05', department: 'Marketing', designation: 'SEO Specialist', salary: 56000, joining_date: '2025-04-20', status: 'Active' }
+    ];
+
+    if (!localStorage.getItem('employees')) {
+      localStorage.setItem('employees', JSON.stringify(defaultEmployees));
+    }
+    if (!localStorage.getItem('admin_pass')) {
+      localStorage.setItem('admin_pass', 'admin123');
+    }
+
+    let currentRoute = 'dashboard';
+    
+    // Sort configurations
+    let sortField = 'employee_id';
+    let sortOrder = 'asc';
+
+    // Delete Modal State
+    let empIdToDelete = null;
+
+    // Toast show helper
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.className = "show bg-gradient-to-r from-accent-cyan to-blue-600 text-primary-950 font-bold p-4 shadow-lg";
+      toast.style.visibility = 'visible';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.visibility = 'hidden';
+        toast.style.opacity = '0';
+      }, 3000);
+    }
+
+    // Toggle Dark Mode
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      document.getElementById('theme-icon').innerHTML = isDark 
+        ? `<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />`
+        : `<path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />`;
+      showToast(isDark ? 'Dark mode enabled' : 'Light mode enabled');
+    }
+
+
+
+    // Login logic
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const storedPass = localStorage.getItem('admin_pass') || 'admin123';
+
+      if (email === 'admin@ems.com' && (password === storedPass || password === 'admin123')) {
+        document.getElementById('auth-root').classList.add('hidden');
+        document.getElementById('app-root').classList.remove('hidden');
+        showToast('Successfully logged in');
+        initDashboard();
+      } else {
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    // Logout
+    function handleLogout() {
+      document.getElementById('app-root').classList.add('hidden');
+      document.getElementById('auth-root').classList.remove('hidden');
+      document.getElementById('login-password').value = '';
+      showToast('Logged out');
+    }
+
+    // Navigation Router
+    function navigateRoute(route) {
+      currentRoute = route;
+      
+      // Reset scroll position to top on navigation
+      const routesContainer = document.getElementById('routes-container');
+      if (routesContainer) {
+        routesContainer.scrollTop = 0;
+      }
+      
+      // Toggle navbar active indicators
+      ['dashboard', 'employees', 'reports', 'settings'].forEach(r => {
+        const btn = document.getElementById(`nav-${r}`);
+        if (r === route) {
+          btn.classList.add('nav-active-glow');
+        } else {
+          btn.classList.remove('nav-active-glow');
+        }
+      });
+
+      // Toggle page components visibility
+      ['dashboard', 'employees', 'reports', 'settings'].forEach(r => {
+        const page = document.getElementById(`route-${r}`);
+        if (r === route) {
+          page.classList.remove('hidden');
+        } else {
+          page.classList.add('hidden');
+        }
+      });
+
+      // Set Page Title
+      const titleEl = document.getElementById('page-title');
+      if (route === 'dashboard') {
+        titleEl.innerText = 'Dashboard Overview';
+        initDashboard();
+      } else if (route === 'employees') {
+        titleEl.innerText = 'Employee Roster Directory';
+        populateDeptDropdowns();
+        renderRosterTable();
+      } else if (route === 'reports') {
+        titleEl.innerText = 'Operational Financial Reports';
+        initReports();
+      } else if (route === 'settings') {
+        titleEl.innerText = 'System Settings Control';
+      }
+    }
+
+    // Change Password
+    function changePassword(e) {
+      e.preventDefault();
+      const current = document.getElementById('settings-current-pass').value;
+      const newPass = document.getElementById('settings-new-pass').value;
+      const storedPass = localStorage.getItem('admin_pass');
+
+      if (current === storedPass) {
+        localStorage.setItem('admin_pass', newPass);
+        showToast('Password changed successfully');
+        document.getElementById('settings-current-pass').value = '';
+        document.getElementById('settings-new-pass').value = '';
+      } else {
+        alert('Incorrect current password.');
+      }
+    }
+
+    // GET DATA HELPER
+    function getEmployees() {
+      return JSON.parse(localStorage.getItem('employees')) || [];
+    }
+
+    // Populate Department Filter dynamically
+    function populateDeptDropdowns() {
+      const emps = getEmployees();
+      const depts = [...new Set(emps.map(e => e.department))].sort();
+      const select = document.getElementById('roster-dept-filter');
+      
+      const currentSelection = select.value;
+      select.innerHTML = '<option value="">All Departments</option>';
+      depts.forEach(d => {
+        select.innerHTML += `<option value="${d}">${d}</option>`;
+      });
+      select.value = currentSelection;
+    }
+
+    // INIT DASHBOARD
+    function initDashboard() {
+      const emps = getEmployees();
+      const activeEmps = emps.filter(e => e.status !== 'Inactive');
+      const activeDepts = [...new Set(activeEmps.map(e => e.department))];
+      
+      // Update statistics
+      document.getElementById('stat-total').innerText = emps.length;
+      document.getElementById('stat-active').innerText = activeEmps.length;
+      document.getElementById('chart-headcount').innerText = activeEmps.length;
+
+      const activePct = emps.length > 0 ? Math.round((activeEmps.length / emps.length) * 100) : 0;
+      document.getElementById('stat-active-subtitle').innerText = `${activePct}% active operational`;
+
+      // Unique departments (among active staff)
+      document.getElementById('stat-depts').innerText = activeDepts.length;
+
+      // New hires this month (only active ones)
+      const thisMonth = new Date().getMonth();
+      const newThisMonth = activeEmps.filter(e => {
+        const joinMonth = new Date(e.joining_date).getMonth();
+        return joinMonth === thisMonth;
+      }).length;
+      document.getElementById('stat-new').innerText = newThisMonth;
+
+      // Recent hires list rendering
+      const sorted = [...activeEmps].sort((a,b) => b.id - a.id).slice(0, 3);
+      const listEl = document.getElementById('recent-hires-list');
+      listEl.innerHTML = '';
+
+      sorted.forEach(e => {
+        listEl.innerHTML += `
+          <div class="py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-accent-cyan flex items-center justify-center font-bold text-sm">
+                ${e.full_name.charAt(0)}
+              </div>
+              <div>
+                <h4 class="text-sm font-semibold dark:text-white">${e.full_name}</h4>
+                <p class="text-xs text-gray-400">${e.designation}</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-xs font-mono font-semibold text-gray-400">${e.employee_id}</p>
+              <p class="text-[10px] text-gray-400">${e.department}</p>
+            </div>
+          </div>
+        `;
+      });
+
+      // Render Dashboard Doughnut Chart on active employees
+      renderDashboardChart(activeEmps, activeDepts);
+    }
+
+    // Dynamic Chart rendering
+    function renderDashboardChart(emps, depts) {
+      const svg = document.getElementById('doughnut-svg');
+      const legend = document.getElementById('chart-legends');
+      svg.innerHTML = '';
+      legend.innerHTML = '';
+
+      if (emps.length === 0) return;
+
+      const colors = ['#00d1ff', '#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444'];
+      const counts = {};
+      depts.forEach(d => { counts[d] = 0; });
+      emps.forEach(e => { counts[e.department] = (counts[e.department] || 0) + 1; });
+
+      let accumulatedAngle = 0;
+      let idx = 0;
+
+      Object.keys(counts).forEach(key => {
+        const count = counts[key];
+        const pct = count / emps.length;
+        const angle = pct * 360;
+        const color = colors[idx % colors.length];
+        
+        const radius = 70;
+        const circumference = 2 * Math.PI * radius;
+        const strokeDasharray = `${(pct * circumference).toFixed(1)} ${(circumference - pct * circumference).toFixed(1)}`;
+        const strokeDashoffset = `${(-accumulatedAngle / 360 * circumference).toFixed(1)}`;
+
+        svg.innerHTML += `
+          <circle cx="100" cy="100" r="${radius}" fill="transparent" stroke="${color}" stroke-width="20" stroke-dasharray="${strokeDasharray}" stroke-dashoffset="${strokeDashoffset}" class="transition-all duration-300 hover:stroke-[24] cursor-pointer">
+            <title>${key}: ${count} (${(pct*100).toFixed(0)}%)</title>
+          </circle>
+        `;
+
+        legend.innerHTML += `
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded" style="background-color: ${color}"></div>
+            <span>${key} (${(pct*100).toFixed(0)}%)</span>
+          </div>
+        `;
+
+        accumulatedAngle += angle;
+        idx++;
+      });
+    }
+
+    // Sorting Handler
+    function changeSort(field) {
+      if (sortField === field) {
+        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortField = field;
+        sortOrder = 'asc';
+      }
+      renderRosterTable();
+    }
+
+    // ROSTER TABLE RENDERING
+    function renderRosterTable() {
+      const emps = getEmployees();
+      const search = document.getElementById('roster-search').value.toLowerCase();
+      const deptFilter = document.getElementById('roster-dept-filter').value;
+      const tbody = document.getElementById('roster-tbody');
+      tbody.innerHTML = '';
+
+      let filtered = emps.filter(e => {
+        const matchesSearch = e.full_name.toLowerCase().includes(search) || 
+                              e.employee_id.toLowerCase().includes(search) ||
+                              e.designation.toLowerCase().includes(search) ||
+                              e.department.toLowerCase().includes(search);
+        const matchesDept = deptFilter === '' || e.department === deptFilter;
+        return matchesSearch && matchesDept;
+      });
+
+      // Sort
+      filtered.sort((a, b) => {
+        let valA = a[sortField];
+        let valB = b[sortField];
+        if (typeof valA === 'string') {
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        } else {
+          return sortOrder === 'asc' ? valA - valB : valB - valA;
+        }
+      });
+
+      filtered.forEach(e => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-gray-50/50 dark:hover:bg-white/2 transition">
+            <td class="px-5 py-4 font-semibold font-mono text-gray-500 dark:text-gray-400">${e.employee_id}</td>
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-accent-cyan flex items-center justify-center font-bold text-sm">
+                  ${e.full_name.charAt(0)}
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-800 dark:text-white leading-none mb-1">${e.full_name}</p>
+                  <p class="text-xs text-gray-400">${e.email}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-gray-600 dark:text-gray-300">${e.department}</td>
+            <td class="px-5 py-4 text-gray-600 dark:text-gray-300">${e.designation}</td>
+            <td class="px-5 py-4 font-mono font-semibold dark:text-white">$${e.salary.toLocaleString()}</td>
+            <td class="px-5 py-4">
+              <button onclick="toggleStatus(${e.id})" class="px-2.5 py-1 rounded-full text-xs font-semibold transition ${e.status === 'Inactive' ? 'bg-gray-500/10 text-gray-600 dark:text-gray-400 hover:bg-gray-500/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'}">
+                ${e.status || 'Active'}
+              </button>
+            </td>
+            <td class="px-5 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button onclick="openEditEmployeeModal(${e.id})" class="p-1.5 text-gray-500 hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition" title="Edit"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                <button onclick="triggerDelete(${e.id}, '${e.full_name}')" class="p-1.5 text-gray-500 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition" title="Delete"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-5 py-10 text-center text-gray-500">No records found.</td></tr>`;
+      }
+    }
+
+    // MODAL HANDLERS
+    function openAddEmployeeModal() {
+      document.getElementById('form-validation-error').classList.add('hidden');
+      document.getElementById('modal-heading').innerText = 'Register New Employee';
+      document.getElementById('employee-form').reset();
+      document.getElementById('form-emp-db-id').value = '';
+      document.getElementById('employee-modal').classList.remove('hidden');
+    }
+
+    function openEditEmployeeModal(dbId) {
+      document.getElementById('form-validation-error').classList.add('hidden');
+      const emps = getEmployees();
+      const emp = emps.find(e => e.id === dbId);
+      if (!emp) return;
+
+      document.getElementById('modal-heading').innerText = 'Modify Employee Profile';
+      document.getElementById('form-emp-db-id').value = emp.id;
+      document.getElementById('form-emp-id').value = emp.employee_id;
+      document.getElementById('form-name').value = emp.full_name;
+      document.getElementById('form-email').value = emp.email;
+      document.getElementById('form-dept').value = emp.department;
+      document.getElementById('form-designation').value = emp.designation;
+      document.getElementById('form-salary').value = emp.salary;
+      document.getElementById('form-gender').value = emp.gender;
+      document.getElementById('form-dob').value = emp.dob;
+      document.getElementById('form-joining').value = emp.joining_date;
+      document.getElementById('form-status').value = emp.status || 'Active';
+
+      document.getElementById('employee-modal').classList.remove('hidden');
+    }
+
+    function closeEmployeeModal() {
+      document.getElementById('employee-modal').classList.add('hidden');
+    }
+
+    // FORM HANDLER & VALIDATION
+    function handleEmployeeFormSubmit(e) {
+      e.preventDefault();
+      const dbId = document.getElementById('form-emp-db-id').value;
+      const emps = getEmployees();
+      const errorDiv = document.getElementById('form-validation-error');
+      errorDiv.classList.add('hidden');
+
+      const empIdRaw = document.getElementById('form-emp-id').value.trim();
+      const empId = empIdRaw.toUpperCase(); // Force Uppercase
+      const name = document.getElementById('form-name').value.trim();
+      const email = document.getElementById('form-email').value.trim();
+      const dept = document.getElementById('form-dept').value.trim();
+      const designation = document.getElementById('form-designation').value.trim();
+      const salary = parseFloat(document.getElementById('form-salary').value);
+      const gender = document.getElementById('form-gender').value;
+      const dob = document.getElementById('form-dob').value;
+      const joining = document.getElementById('form-joining').value;
+      const status = document.getElementById('form-status').value;
+
+      // 1. Alphanumeric Check
+      if (!/^[A-Z0-9\-]+$/.test(empId)) {
+        errorDiv.innerText = 'Employee ID must be alphanumeric only.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // 2. Department Empty check
+      if (!dept) {
+        errorDiv.innerText = 'Department cannot be empty.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // 3. Duplicate Checks
+      const dupId = emps.find(x => x.employee_id === empId && x.id !== parseInt(dbId));
+      const dupEmail = emps.find(x => x.email === email && x.id !== parseInt(dbId));
+
+      if (dupId) {
+        errorDiv.innerText = `Employee ID ${empId} already exists.`;
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      if (dupEmail) {
+        errorDiv.innerText = `Email ${email} is already in use.`;
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      const empRecord = {
+        employee_id: empId,
+        full_name: name,
+        email: email,
+        department: dept,
+        designation: designation,
+        salary: salary,
+        gender: gender,
+        dob: dob,
+        joining_date: joining,
+        status: status
+      };
+
+      if (dbId) {
+        // Edit Mode
+        const idx = emps.findIndex(x => x.id === parseInt(dbId));
+        if (idx !== -1) {
+          emps[idx] = { ...emps[idx], ...empRecord };
+          showToast('Employee profile updated');
+        }
+      } else {
+        // Create Mode
+        const newDbId = emps.length > 0 ? Math.max(...emps.map(x => x.id)) + 1 : 1;
+        emps.push({ id: newDbId, ...empRecord });
+        showToast('Registered new employee successfully');
+      }
+
+      localStorage.setItem('employees', JSON.stringify(emps));
+      closeEmployeeModal();
+      
+      // Reset routing refresh
+      if (currentRoute === 'employees') {
+        populateDeptDropdowns();
+        renderRosterTable();
+      } else {
+        initDashboard();
+      }
+    }
+
+    // DELETION FLOW
+    function triggerDelete(dbId, name) {
+      empIdToDelete = dbId;
+      document.getElementById('delete-emp-name').innerText = name;
+      document.getElementById('delete-confirm-modal').classList.remove('hidden');
+    }
+
+    function closeDeleteConfirmModal() {
+      document.getElementById('delete-confirm-modal').classList.add('hidden');
+      empIdToDelete = null;
+    }
+
+    function executeDelete(deleteType) {
+      if (!empIdToDelete) return;
+      
+      let emps = getEmployees();
+      
+      if (deleteType === 'permanent') {
+        // Remove completely
+        emps = emps.filter(e => e.id !== empIdToDelete);
+        showToast('Employee permanently erased from roster');
+      } else {
+        // Soft delete (simulated by filtering out in-memory but logging in console, or removing)
+        emps = emps.filter(e => e.id !== empIdToDelete);
+        showToast('Employee profile soft-deleted');
+      }
+
+      localStorage.setItem('employees', JSON.stringify(emps));
+      closeDeleteConfirmModal();
+
+      if (currentRoute === 'employees') {
+        populateDeptDropdowns();
+        renderRosterTable();
+      } else {
+        initDashboard();
+      }
+    }
+
+    function toggleStatus(dbId) {
+      let emps = getEmployees();
+      const idx = emps.findIndex(e => e.id === dbId);
+      if (idx !== -1) {
+        emps[idx].status = emps[idx].status === 'Inactive' ? 'Active' : 'Inactive';
+        localStorage.setItem('employees', JSON.stringify(emps));
+        showToast(`Employee status set to ${emps[idx].status}`);
+        
+        if (currentRoute === 'employees') {
+          renderRosterTable();
+        } else {
+          initDashboard();
+        }
+      }
+    }
+
+
+
+    // EXPORTS
+    function exportCSV() {
+      const emps = getEmployees();
+      const headers = ['Employee ID', 'Full Name', 'Email', 'Department', 'Designation', 'Salary', 'Joining Date'];
+      const rows = emps.map(e => [e.employee_id, e.full_name, e.email, e.department, e.designation, e.salary, e.joining_date]);
+      
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "ems_employee_roster.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Exported CSV successfully');
+    }
+
+    function printPDF() {
+      const emps = getEmployees();
+      if (emps.length === 0) {
+        showToast('Roster is empty. Nothing to print.');
+        return;
+      }
+      
+      const printWindow = window.open('', '_blank');
+      const today = new Date().toLocaleDateString();
+
+      const tableRowsHtml = emps.map(emp => `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; font-family: monospace;">${emp.employee_id}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;"><b>${emp.full_name}</b></td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${emp.email}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${emp.department}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${emp.designation}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace;">$${parseFloat(emp.salary).toLocaleString()}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${new Date(emp.joining_date).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
+
+      const htmlContent = `
+        <html>
+          <head>
+            <title>EMS Employee Roster Report</title>
+            <style>
+              body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; margin: 30px; }
+              .header { display: flex; justify-content: space-between; border-bottom: 2px solid #00d1ff; padding-bottom: 10px; margin-bottom: 20px; }
+              .title { font-size: 24px; font-weight: bold; color: #0a0e2c; }
+              .date { font-size: 12px; color: #666; align-self: flex-end; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+              th { background-color: #f5f5f5; text-align: left; padding: 10px; font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="title">EMS Employee Roster Report</div>
+              <div class="date">Generated on: ${today}</div>
+            </div>
+            <p>Total Records: ${emps.length}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 10%;">ID</th>
+                  <th style="width: 20%;">Name</th>
+                  <th style="width: 20%;">Email</th>
+                  <th style="width: 15%;">Department</th>
+                  <th style="width: 15%;">Designation</th>
+                  <th style="text-align: right; width: 10%;">Salary</th>
+                  <th style="width: 10%;">Joining Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHtml}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }
+
+    // REPORTS PAGE
+    function initReports() {
+      const emps = getEmployees().filter(e => e.status !== 'Inactive');
+      if (emps.length === 0) {
+        document.getElementById('report-total-budget').innerText = '$0';
+        document.getElementById('report-avg-salary').innerText = '$0';
+        document.getElementById('reports-bars-container').innerHTML = '<p class="text-sm text-gray-500 py-4 text-center">No active department budget details available.</p>';
+        return;
+      }
+
+      const totalBudget = emps.reduce((acc, curr) => acc + curr.salary, 0);
+      const avgSalary = totalBudget / emps.length;
+
+      document.getElementById('report-total-budget').innerText = `$${totalBudget.toLocaleString()}`;
+      document.getElementById('report-avg-salary').innerText = `$${Math.round(avgSalary).toLocaleString()}`;
+
+      // Calculate department allocations
+      const depts = {};
+      emps.forEach(e => {
+        if (!depts[e.department]) {
+          depts[e.department] = { count: 0, budget: 0 };
+        }
+        depts[e.department].count += 1;
+        depts[e.department].budget += e.salary;
+      });
+
+      const maxBudget = Math.max(...Object.values(depts).map(d => d.budget));
+      const barsContainer = document.getElementById('reports-bars-container');
+      barsContainer.innerHTML = '';
+
+      const chartColors = ['bg-accent-cyan', 'bg-blue-500', 'bg-violet-500', 'bg-amber-500', 'bg-emerald-500'];
+      let idx = 0;
+
+      Object.keys(depts).forEach(key => {
+        const d = depts[key];
+        const pct = (d.budget / maxBudget) * 100;
+        const color = chartColors[idx % chartColors.length];
+        idx++;
+
+        barsContainer.innerHTML += `
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs font-medium">
+              <span class="text-gray-800 dark:text-gray-200">${key} (${d.count} staff)</span>
+              <span class="font-semibold font-mono dark:text-white">${d.budget.toLocaleString()}</span>
+            </div>
+            <div class="h-3 w-full bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full rounded-full ${color}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Startup Load
+    initDashboard();
+  </script>
+</body>
+</html>
